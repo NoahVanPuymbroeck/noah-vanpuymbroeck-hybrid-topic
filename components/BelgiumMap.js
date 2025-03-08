@@ -40,7 +40,9 @@ const BelgiumMapWithGraph = () => {
 
     useEffect(() => {
         const width = 800, height = 600;
-        const svg = d3.select(svgRef.current).attr('width', width).attr('height', height);
+        const svg = d3.select(svgRef.current)
+            .attr('width', width)
+            .attr('height', height);
 
         // Create tooltip div
         const tooltip = d3.select("body")
@@ -57,8 +59,9 @@ const BelgiumMapWithGraph = () => {
             const projection = d3.geoMercator().fitSize([width, height], geoData);
             const pathGenerator = d3.geoPath().projection(projection);
 
-            svg.append('g')
-                .selectAll('path')
+            const g = svg.append('g'); // Group to hold map and markers
+
+            g.selectAll('path')
                 .data(geoData.features)
                 .enter()
                 .append('path')
@@ -67,8 +70,7 @@ const BelgiumMapWithGraph = () => {
                 .attr('stroke', '#333');
 
             // Draw universities on the map
-            svg.append('g')
-                .selectAll('circle')
+            g.selectAll('circle')
                 .data(universities)
                 .enter()
                 .append('circle')
@@ -89,8 +91,27 @@ const BelgiumMapWithGraph = () => {
                 .on("mouseout", () => {
                     tooltip.style("visibility", "hidden");
                 });
+
+            // **Add Zoom and Pan**
+            const zoom = d3.zoom()
+                .scaleExtent([1, 8]) // Min and max zoom levels
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+
+                    // Adjust circle size dynamically based on zoom level
+                    g.selectAll("circle")
+                        .attr("r", 5 / event.transform.k); // Scale down circles when zooming in
+                });
+
+            svg.call(zoom);
+
         });
+
+        return () => {
+            tooltip.remove(); // Clean up tooltip when component unmounts
+        };
     }, []);
+
 
     return <svg ref={svgRef}></svg>;
 };
